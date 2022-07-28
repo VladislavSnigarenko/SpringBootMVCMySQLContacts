@@ -1,0 +1,18 @@
+.ukrainian-flag {
+	background-image: url("/images/ukraine-ukraina-flag.jpg");
+	padding: 350px 0;
+	min-height: 700px;
+}
+
+.message-welcome {
+	background: blanchedalmond;
+}
+
+.help {
+	cursor: help;
+}
+
+.main-menu:hover {
+	 background: gold;;
+}
+

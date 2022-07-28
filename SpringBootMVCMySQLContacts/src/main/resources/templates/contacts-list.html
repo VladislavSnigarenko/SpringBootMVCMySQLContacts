@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport"
+	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Contacts list</title>
+
+	<!-- Bootstrap CSS -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    	
+	<!-- Local CSS -->
+	<link rel="stylesheet" type="text/css" href="/css/style-contact.css" />
+</head>
+<body>
+	<header th:insert="bloks/header::header-contact"></header>
+	<main>
+		<div class="container my-2">
+			<h2>
+				<a th:href="@{/contact}" class="" title="List contacts"> Contacts list </a>
+			</h2>
+			<div class="form-group"> 
+				<a href="/contact/add"><button class="main-botton">Add Contact</button></a>
+				<a href="/group/add"><button class="main-botton">Add Group</button></a>
+				<a ><button class="main-botton" 
+						title="Delete all marked lines contacts"
+						onclick="onClickDeleteAll()">Delete All Contact</button></a>
+				<label for="choose-group">Choose group</label>
+				<select class="form-group" id="choose-group" 
+					 onchange="changeGroup()">
+				    <option value="-1" >...</option>
+					<option th:each="group : ${groups}" th:value="${group.id}" 
+						th:text="${group.name}"
+						th:selected="${group.id} == ${groupId}">
+				</select>
+				<label for="status-info">Status : </label>
+				<label id="status-info"></label>
+				<form class="navbar-form navbar-left" role="search"
+						action="/contact/search" method="post" onsubmit="return validate_form ();">
+					<label for="site-search">Search contacts:</label>
+					<input type="search" id="contacts-search" name="keyword" oninput="onInputKeyword(this)">
+					<button type="submit" >Search</button>				
+				</form>
+			</div>
+		</div>
+		<table class="table table-striped" >
+                <thead>
+	                <tr>
+	                    <td title="Click row for delete"><b>X</b></td>
+	                    <td><b>Name</b></td>
+	                    <td><b>Surname</b></td>
+	                    <td><b>Phone</b></td>
+	                    <td><b>E-mail</b></td>
+	                    <td><b>Group</b></td>
+	                </tr>
+                </thead>                
+			  	<tbody role="row" onfocus="fun_onfocus(this)">
+					<tr th:if="${contacts.empty}">
+			            <td colspan="2"> No Contact Available </td>
+			        </tr>			        
+			        <tr th:each="contact, i : ${contacts}">
+			            <td><input type="checkbox" name="toDelete[]" 
+			            	th:value="${contact.id}" 
+				        	class="table-checkbox" 
+				        	title="Check box" 
+				        	onclick="fun_onclick(this)"
+				        	th:id="'checkbox_'+*{__${contact.id}__}"
+				        	data-target="requests-all"/>
+				        </td>
+			            <td><span th:text="${contact.name}"> Name </span></td>
+			            <td><span th:text="${contact.surname}"> Surname </span></td>
+			            <td><span th:text="${contact.phone}"> Phone </span></td>
+			            <td><span th:text="${contact.email}"> E mail </span></td>
+			            <td>
+							<span th:if="${contact.group != null}" th:text="${contact.group.name}">Female</span>
+    						<span th:unless="${contact.group != null}">...</span>
+			            </td>
+			            <td><a class="btn btn-primary"
+							th:href="'/contact/' + ${contact.id} + '/edit'"
+							title="Update contact">Update</a> <a class="btn btn-danger"
+							th:href="'/contact/' + ${contact.id} + '/delete'"
+							title="Delete contact">Delete</a>
+						</td>
+			        </tr>
+			    </tbody>		
+        </table>
+		<div th:if="${allPages != null}" class="text-center m-1"> 
+			<nav aria-label="Page navigation">
+	        	<p>On page items [[${onPageItems}]], Total Items [[${totalItems}]] : Page [[${currentPage}]] of [[${totalPages}]]</p>
+			    <ul class="pagination justify-content-center" th:with="pageUrlPrefix = '/contact/?page='">
+				    <li th:class="${currentPage > 1 ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + '1'}"
+				    	title="First">First</a>
+				    </li>
+				    <li th:class="${currentPage > 1 ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${currentPage - 1}}"
+				    	title="Previous">Previous</a>
+				    </li>
+	
+				    <li th:each="i: ${#numbers.sequence(1, totalPages)}" 
+				    	th:class="${currentPage != i ? 'page-item' : 'page-item active'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${i}}"
+				    	th:title="${'Page '+ i}"
+	               		>[[${i}]]</a>
+				    </li>
+	
+				    <li th:class="${currentPage < totalPages ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${currentPage + 1}}"
+				    	title="Next">Next</a>
+				    </li>
+				    <li th:class="${currentPage < totalPages ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${totalPages}}"
+				    	title="Last">Last</a>
+				    </li>
+			    </ul>
+			</nav>
+		</div>
+		<div th:if="${byGroupPages != null}" class="text-center m-1"> 
+			<p> Choice group : 
+				<span class="choice-group" th:text="${groups[__${groupId-1}__].name	}"></span>
+			</p>
+        	<nav aria-label="Page navigation">
+	        	<p>On page items [[${onPageItems}]], Total Items [[${totalItems}]] : Page [[${currentPage}]] of [[${totalPages}]]</p>
+		    
+			    <ul class="pagination justify-content-center" th:with="pageUrlPrefix = '/contact/group/'+ ${groupId} + '?page='">
+				    <li th:class="${currentPage > 1 ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + '1'}"
+				    	title="First">First</a>
+				    </li>
+				    <li th:class="${currentPage > 1 ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${currentPage - 1}}"
+				    	title="Previous">Previous</a>
+				    </li>
+				    <li th:each="i: ${#numbers.sequence(1, totalPages)}" 
+				    	th:class="${currentPage != i ? 'page-item' : 'page-item active'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${i}}"
+				    	th:title="${'Page '+ i}">[[${i}]]</a>
+				    </li>
+				    <li th:class="${currentPage < totalPages ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${currentPage + 1}}"
+				    	title="Next">Next</a>
+				    </li>
+				    <li th:class="${currentPage < totalPages ? 'page-item' : 'page-item disabled'}">
+				    	<a class="page-link" th:href="@{${pageUrlPrefix} + ${totalPages}}"
+				    	title="Last">Last</a>
+				    </li>
+			    </ul>
+			</nav>
+		</div>		
+	</main>
+	<footer th:insert="bloks/footer::footer"> footer + </footer>
+	<script type="text/javascript" th:inline="javascript">
+
+	   	var Ids = [];
+	
+		function changeGroup(){
+	        var group = document.getElementById("choose-group").value;
+	        window.location.href='/contact/group/' + group;
+	    }
+		
+        function onInputKeyword(keyword){
+        	if(keyword.value.length !== 0){
+        		statLine("");
+        	}
+        };
+        
+        function statLine(str, color = 0) {
+        	tag = document.getElementById("status-info");
+        	tag.innerHTML = str;
+        	
+        	switch (color) {
+      		  case 0:
+	        	tag.style.color = "red";        
+	        	break;
+    		  case 1:
+	        	tag.style.color = "blue";        
+	        	break;
+	    	  case 2:
+	        	tag.style.color = "green";        
+	        	break;
+        	}
+        }    
+        
+        function onClickDeleteAll() {
+        	if(Ids.length > 0){
+         	    var url = "http://localhost:8080/contact/delete_all";
+        	    var xhr = new XMLHttpRequest();
+        	    xhr.open("POST", url, true);
+        	    var block = {"block": []};
+            	Ids.forEach(
+            			element => (
+            					block['block'].push(element)
+            					));
+        	    var encoded = JSON.stringify(block);
+        	    xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        	    xhr.send(encoded);
+				window.location.reload();
+        	}else{
+        		statLine("Not check rows.");
+        	}
+        };        
+       
+		function fun_onclick(obj){
+        	
+			var index = Ids.indexOf(obj.value);
+			if(obj.checked){
+				if (index == -1){
+	        		Ids.push(obj.value);
+	        	}
+			} else{
+				if (index !== -1){
+	        		Ids.splice(index, 1);
+	        	}
+			};
+			
+			if(Ids.length==0){
+	            statLine("");
+			} else{
+	            statLine("Mark : " + Ids.length + " rows.", 1);
+			}
+		}
+
+	</script>
+</body>
+</html>
