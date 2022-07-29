@@ -12,6 +12,7 @@ import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models.Group;
 
 public interface ContactRepository extends JpaRepository<Contact, Long> {
 
+    // Не знаю как создана таблица, то нужен индекс что бы findBy работал быстро. Иначе будет full scan select
     @Query("SELECT c FROM Contact c WHERE c.group = :group")
     List<Contact> findByGroup(@Param("group") Group group, Pageable pageable);
 
@@ -23,5 +24,8 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     
     @Query("SELECT COUNT(c) FROM Contact c WHERE c.group = :group")
     long countByGroup(@Param("group") Group group);
+
+    // jpa такие простые запросы умеет сам делать если правильно метод написать
+    long countAllByGroup(Group group);
     
 }
