@@ -50,11 +50,13 @@ public class ContactService {
     	contactRepository.delete(contact);
     }
 
-    public Contact findContactById(Long id) {
+    // есть find to Optional<>
+    public Contact getContactById(Long id) {
     	return contactRepository.findById(id).orElse(null);
     }    
-    
-    public boolean ContactExistsById(Long id) {
+
+    // метод с малой буквы
+    public boolean contactExistsById(Long id) {
     	return contactRepository.existsById(id);
     }    
     

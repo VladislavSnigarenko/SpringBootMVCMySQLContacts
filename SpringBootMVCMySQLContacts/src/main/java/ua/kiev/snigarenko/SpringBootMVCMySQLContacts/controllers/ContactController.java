@@ -8,28 +8,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models.Contact;
 import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models.Group;
 import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services.ContactService;
-import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services.MainService;
+import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services.MainServiceConfiguration;
 
 @Controller
 @RequestMapping("/contact")
 public class ContactController {
 
-	@Autowired
-	MainService mainService;
+	@Autowired // в общем @Autowired не рекомендуется, советую прочитать про альтернативу
+	MainServiceConfiguration mainServiceConfiguration;
 	
 	@Autowired
 	ContactService contactService; 
@@ -37,18 +32,16 @@ public class ContactController {
 	@RequestMapping
 	public String contactList(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
 		
-    	final int ITEMS_PER_PAGE = mainService.getItemsPerPage();
+    	final int ITEMS_PER_PAGE = mainServiceConfiguration.getItemsPerPage();
 
 	    PageRequest pageRequest = PageRequest.of(page - 1, ITEMS_PER_PAGE, Sort.Direction.ASC, "name");
-	    List<Contact> contacts;
-	    Long countContacts;
-	    contacts = contactService.getAllContacts(pageRequest);
-	    countContacts = contactService.countContacts();
+		List<Contact> contacts = contactService.getAllContacts(pageRequest);
+	    long countContacts = contactService.countContacts();
 	
 		model.addAttribute("groups", contactService.findGroups());
 	    model.addAttribute("contacts", contacts);
 
-	    Long totalCount = contactService.countContacts();
+		long totalCount = contactService.countContacts();
         model.addAttribute("totalCount", totalCount);
         model.addAttribute("allPages", getPageCount(totalCount));
 	    
@@ -72,8 +65,10 @@ public class ContactController {
 	public String contactAdd(@RequestParam(value = "group") long groupId, 
 							@ModelAttribute("contact") Contact contact, Model model) {
 
-        final int DEFAULT_GROUP_ID = mainService.getDefaultGroupId();
-    	
+
+        final int DEFAULT_GROUP_ID = mainServiceConfiguration.getDefaultGroupId();
+
+		// в общем такую логику лучше делать в service
         Group group = (groupId != DEFAULT_GROUP_ID) ? contactService.findGroupById(groupId) : null;
         contact.setGroup(group);
 		try {
@@ -87,10 +82,10 @@ public class ContactController {
 
 	@RequestMapping("/{id}/edit")
 	public String contactEdit(@PathVariable(value = "id") Long id, Model model) {
-		if (!contactService.ContactExistsById(id)) {
+		if (!contactService.contactExistsById(id)) {
 			return "redirect:/contact";
 		}
-		model.addAttribute("contact", contactService.findContactById(id));
+		model.addAttribute("contact", contactService.getContactById(id));
 	    model.addAttribute("groups", contactService.findGroups());
 	
 		return "edit-contact";
@@ -102,22 +97,22 @@ public class ContactController {
 			contactService.saveContact(contact);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "error";
+			return "error"; // такое делается с помощью ControllerAdvice
 		}
 		return "redirect:/contact";
 	}	
 	
 	@RequestMapping("/{id}/delete")
 	public String contactDelete(@PathVariable(value = "id") Long id) {
-		if (!contactService.ContactExistsById(id)) {
+		if (!contactService.contactExistsById(id)) {
 			return "redirect:/contact";
 		}
 		try {
-			Contact contact = contactService.findContactById(id);  
+			Contact contact = contactService.getContactById(id);
 			contactService.deleteContact(contact);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return "error";
+			return "error"; // такое делается с помощью ControllerAdvice
 		}
 		return "redirect:/contact";
 	}
@@ -126,8 +121,8 @@ public class ContactController {
 	public String listGroup(@PathVariable(value = "id") Long groupId,
 			@RequestParam(required = false, defaultValue = "1") Integer page, Model model) {
 
-        final int DEFAULT_GROUP_ID = mainService.getDefaultGroupId();
-    	final int ITEMS_PER_PAGE = mainService.getItemsPerPage();
+        final int DEFAULT_GROUP_ID = mainServiceConfiguration.getDefaultGroupId();
+    	final int ITEMS_PER_PAGE = mainServiceConfiguration.getItemsPerPage();
 		
 		if(groupId == DEFAULT_GROUP_ID){
 			return "redirect:/contact";
@@ -137,13 +132,14 @@ public class ContactController {
 		PageRequest pageRequest = PageRequest.of(page - 1, ITEMS_PER_PAGE, Sort.Direction.ASC, "name");
 				
 		List<Contact> contacts = contactService.findByGroup(group, pageRequest);
-	    Long countContacts = contactService.countContactsByGroup(group);
+	    long countContacts = contactService.countContactsByGroup(group); // всегда используем примитивы где можно
 
 		model.addAttribute("groups", contactService.findGroups());
 	    model.addAttribute("contacts", contacts);
 	    model.addAttribute("groupId", groupId);
 
-        model.addAttribute("byGroupPages", getPageCount(contactService.countContactsByGroup(group)));
+		// дубликат вызова contactService.countContactsByGroup(group)
+        model.addAttribute("byGroupPages", getPageCount(countContacts));
 	    
 	    model.addAttribute("onPageItems", contacts.size());
 	    model.addAttribute("totalItems", countContacts);
@@ -160,17 +156,22 @@ public class ContactController {
 	    model.addAttribute("contacts", contactService.getContactsByPattern(keyword, null));
 	    return "contacts-list";
 	}
-	
-	@PostMapping("/delete_all")
-	public ResponseEntity<Void> contactDeleteAll(@RequestBody JSONObject jsonObject){
 
-		ArrayList<String> datablock = (ArrayList<String>) jsonObject.get("block");
+	// тут виду помешаны котреллены для фронта и реста. такие вещи лучше разделить
+	@PostMapping("/delete_all")
+//	@DeleteMapping(value = "/delete_all", consumes = MediaType.APPLICATION_JSON_VALUE) для операции delete есть отдельный REST метод, плюс можно явно указать что мы принимаем json
+	public ResponseEntity<Void> contactDeleteAll(@RequestBody JSONObject jsonObject){
+		// @RequestBody JSONObject jsonObject - плохой вариант, можно сделать @RequestBody ВащJavaТип body, и спринг сам десериализироет json на обьект java
+		// в таком случае ArrayList<String>) jsonObject.get("block") будет не нужно
+		List<String> datablock = (ArrayList<String>) jsonObject.get("block");
 		datablock.forEach(element -> {
-			if (contactService.ContactExistsById(Integer.valueOf(element).longValue())) {
+			// если нам нужен long то можно пулучить сразу long
+			long contactId = Long.parseLong(element);
+			if (contactService.contactExistsById(contactId)) {
 				try {
-					contactService.deleteContact(contactService.findContactById(Integer.valueOf(element).longValue()));
+					contactService.deleteContact(contactService.getContactById(contactId)); // плюс не считаем два раза а выносим в отдельную переменную
 				} catch (Exception e) {
-					e.printStackTrace();
+					e.printStackTrace(); // в этом try catch нет смысла. советую прочитать про ControllerAdvise в Spring. С помощью него можно организовать обработку ошибок (например вывод в консоль)
 				}
 			}
 		});
@@ -178,7 +179,7 @@ public class ContactController {
 	}
 	    
     private long getPageCount(long totalCount) {
-    	final int ITEMS_PER_PAGE = mainService.getItemsPerPage();
+    	final int ITEMS_PER_PAGE = mainServiceConfiguration.getItemsPerPage();
         return (totalCount / ITEMS_PER_PAGE) + ((totalCount % ITEMS_PER_PAGE > 0) ? 1 : 0);
     }
 	

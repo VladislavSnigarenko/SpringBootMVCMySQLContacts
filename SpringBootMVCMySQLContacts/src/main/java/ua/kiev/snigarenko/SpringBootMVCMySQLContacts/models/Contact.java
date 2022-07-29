@@ -9,7 +9,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="Contacts")
+@Table(name="CONTACTS") // в sql все либо с мало либо с большей буквы
 /*
 @Getter
 @Setter
@@ -30,9 +30,6 @@ public class Contact {
     private String surname;
     private String phone;
     private String email;
-	
-    public Contact() {
-	}
 
 	public Long getId() {
 		return id;

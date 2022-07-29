@@ -22,10 +22,11 @@ public class Group {
 	private String name; 
 	
     @OneToMany(mappedBy="group", cascade=CascadeType.ALL)
-    private List<Contact> contacts = new ArrayList<Contact>();
+    private List<Contact> contacts; // тут spring сам должен инициализировать коллекцию
 
-	public Group() {
-	}
+	// пустые методы или public кострукторы не принято писать, public коструктор по умолчинию создается
+//	public Group() {
+//	}
 
 	public Long getId() {
 		return id;
