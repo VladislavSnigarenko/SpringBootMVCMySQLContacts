@@ -1,12 +1,10 @@
 package ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Configuration;
 
-@Service
-@Component
-public class MainService {
+@Configuration
+public class MainServiceConfiguration {
 
 	@Value("${welcome.message}")
 	private String welcomeMessage;

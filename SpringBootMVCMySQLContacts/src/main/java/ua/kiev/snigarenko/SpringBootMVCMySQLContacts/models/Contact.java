@@ -1,6 +1,7 @@
 package ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -9,20 +10,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="Contacts")
-/*
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-*/
+@Table(name="CONTACTS")
 public class Contact {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id; 
-	
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="group_id")
     private Group group;
 	
@@ -82,11 +77,6 @@ public class Contact {
 		this.email = email;
 	}
 
-	public String toString1() {
-		return "Contact [id=" + id + ", group=" + group + ", name=" + name + ", surname=" + surname + ", phone=" + phone
-				+ ", email=" + email + "]";
-	}
-    
 	@Override
 	public String toString() {
 		return "Contact [id=" + id + ", name=" + name + ", surname=" + surname + ", phone=" + phone

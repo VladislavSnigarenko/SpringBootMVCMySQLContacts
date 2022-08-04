@@ -1,10 +1,11 @@
 package ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services;
 
 import java.util.List;
+import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models.Contact;
 import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models.Group;
@@ -14,13 +15,15 @@ import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.repository.GroupRepository;
 @Service
 public class ContactService {
 
-    @Autowired
-    private ContactRepository contactRepository;
+    private final ContactRepository contactRepository;
+    private final GroupRepository groupRepository;
 
-    @Autowired
-    private GroupRepository groupRepository;
+    public ContactService(ContactRepository contactRepository, GroupRepository groupRepository) {
+		this.contactRepository = contactRepository;
+		this.groupRepository = groupRepository;
+	}
 
-    // Group section
+	// Group section
     public void saveGroup(Group group) {
         groupRepository.save(group);
     }
@@ -42,24 +45,36 @@ public class ContactService {
     	return contactRepository.findAll();
     }
 
-    public void saveContact(Contact contact) {
-    	contactRepository.save(contact);
+    public Contact saveContact(Contact contact) {
+    	return contactRepository.save(contact);
     }
 
     public void deleteContact(Contact contact) {
     	contactRepository.delete(contact);
     }
 
-    public Contact findContactById(Long id) {
-    	return contactRepository.findById(id).orElse(null);
+    public void deleteById(Long id) {
+        contactRepository.deleteById(id);
     }    
     
-    public boolean ContactExistsById(Long id) {
+    public Optional<Contact> findContactById(Long id) {
+    	return contactRepository.findById(id);
+    }    
+    
+    public Contact getContactById(Long id) {
+    	return contactRepository.findById(id).orElseGet(null);
+    }    
+    
+    public boolean contactExistsById(Long id) {
     	return contactRepository.existsById(id);
     }    
     
     public List<Contact> getContactsByPattern(String keyword, Pageable pageable) {
     	return contactRepository.getContactsByPattern(keyword, pageable);
+    }
+
+    public List<Contact> getContactsByPattern(String keyword) {
+    	return contactRepository.getContactsByPattern(keyword);
     }
 
     public long countContacts() {

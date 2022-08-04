@@ -21,6 +21,12 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
 			+ "or LOWER(c.email) LIKE LOWER(CONCAT('%', :pattern, '%'))")
     List<Contact> getContactsByPattern(@Param("pattern") String pattern, Pageable pageable);
     
+    @Query("SELECT c FROM Contact c WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :pattern, '%'))"
+			+ "or LOWER(c.surname) LIKE LOWER(CONCAT('%', :pattern, '%'))"
+			+ "or LOWER(c.phone) LIKE LOWER(CONCAT('%', :pattern, '%'))"
+			+ "or LOWER(c.email) LIKE LOWER(CONCAT('%', :pattern, '%'))")
+    List<Contact> getContactsByPattern(@Param("pattern") String pattern);
+    
     @Query("SELECT COUNT(c) FROM Contact c WHERE c.group = :group")
     long countByGroup(@Param("group") Group group);
     

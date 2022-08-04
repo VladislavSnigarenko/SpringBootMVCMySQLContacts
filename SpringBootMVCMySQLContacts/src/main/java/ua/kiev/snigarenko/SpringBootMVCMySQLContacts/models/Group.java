@@ -1,6 +1,5 @@
 package ua.kiev.snigarenko.SpringBootMVCMySQLContacts.models;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -12,7 +11,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="Groups")
+@Table(name="GROUPS")
 public class Group {
 
 	@Id
@@ -20,12 +19,9 @@ public class Group {
 	private Long id; 
 
 	private String name; 
-	
-    @OneToMany(mappedBy="group", cascade=CascadeType.ALL)
-    private List<Contact> contacts = new ArrayList<Contact>();
 
-	public Group() {
-	}
+    @OneToMany(mappedBy="group", cascade=CascadeType.ALL)
+    private List<Contact> contacts;
 
 	public Long getId() {
 		return id;

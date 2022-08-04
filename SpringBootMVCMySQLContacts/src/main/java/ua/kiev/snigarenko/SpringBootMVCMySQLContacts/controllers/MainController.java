@@ -5,13 +5,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services.MainService;
+import ua.kiev.snigarenko.SpringBootMVCMySQLContacts.services.MainServiceConfiguration;
 
 @Controller
 public class MainController {
 
 	@Autowired 
-	private MainService mainService;
+	private MainServiceConfiguration mainService;
 	
 	@RequestMapping
 	public String mainPage(Model model) {
